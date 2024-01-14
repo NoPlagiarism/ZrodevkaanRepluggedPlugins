@@ -20,7 +20,7 @@ const NameWithRole = await webpack.waitForModule<{ H: (something: string) => unk
 
 const inject = new Injector();
 
-const DisplayName = ({ username, discriminator, startCopy }) => {
+const DisplayName = ({ username, discriminator, startCopy, color }) => {
   // this now exists.
   // please make it easier on yourself with your next plugin.
   // exporting this stuff and MAKING it organized.
@@ -28,12 +28,12 @@ const DisplayName = ({ username, discriminator, startCopy }) => {
 
   return (
     <text
-      style={{ userSelect: "none" }}
+      style={{ userSelect: "none", color }}
       onClick={() => startCopy(username)}>{` @${username}${displayDiscriminator}`}</text>
   );
 };
 
-export async function start() {
+export function start() {
   inject.after(NameWithRole, "H", (a: any) => {
     const nameHolder = a[0]?.children;
     const className: string = a[0]?.className;
@@ -45,6 +45,13 @@ export async function start() {
       const actualUsername = util.findInTree(a, filterFunction);
 
       if (actualUsername) {
+        const filterColorFunction: (tree: Record<string, unknown>) => boolean = (x) =>
+          Boolean(x?.colorString) && Boolean(x?.nick);
+        const guildAuthor = util.findInTree(a, filterColorFunction);
+        let colorString: string = "#000000";
+        if (guildAuthor) {
+          colorString = guildAuthor.colorString;
+        }
         const { username, discriminator } = actualUsername;
         const displayDiscriminator =
           discriminator && discriminator !== "0" ? `${discriminator}` : "";
@@ -53,6 +60,7 @@ export async function start() {
             username={username}
             discriminator={displayDiscriminator}
             startCopy={startCopy}
+            color={colorString}
           />
         );
 
